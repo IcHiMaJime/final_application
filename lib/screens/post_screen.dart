@@ -49,7 +49,7 @@ class _AddPostPageState extends State<AddPostPage> {
 
     try {
       final user = _authService.getCurrentUser();
-      if (user == null) throw "Kailangan mong mag-login muli.";
+      if (user == null) throw "Please log in again.";
 
       CloudinaryResponse response = await cloudinary.uploadFile(
         CloudinaryFile.fromBytesData(
