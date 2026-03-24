@@ -134,7 +134,7 @@ class HomePage extends StatelessWidget {
         // --- DITO LALABAS YUNG LINE (DIVIDER) ---
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(
+          child: Container( 
             color: Colors.white.withOpacity(0.15), // Kulay ng line
             height: 0.5, // Kapal ng line
           ),

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import '../screens/profile_screen.dart'; // Siguraduhing tama ang path ng import mo
+import '../screens/profile_screen.dart';
 
 class PostCard extends StatefulWidget {
   final String postId;
@@ -38,9 +38,10 @@ class _PostCardState extends State<PostCard> {
   void initState() {
     super.initState();
     likeCount = widget.initialLikes;
-    _checkIfLiked();
+    _checkIfLiked(); // Alamin agad kung na-like na ng user ang post pagka-load
   }
 
+  // Tinitingnan sa Firestore kung ang UID ng current user ay nasa 'likes' sub-collection ng post
   void _checkIfLiked() async {
     User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return;
@@ -54,15 +55,18 @@ class _PostCardState extends State<PostCard> {
 
     if (mounted) {
       setState(() {
-        isLiked = doc.exists;
+        isLiked = doc.exists; // Kung nage-exist ang document, ibig sabihin liked na ito
       });
     }
   }
 
+  // Function para magpadala ng notification sa may-ari ng post (like o comment)
   Future<void> _sendNotification(String type) async {
     User? currentUser = FirebaseAuth.instance.currentUser;
+    // Huwag mag-notif kung sarili mong post ang ni-like/comment mo
     if (currentUser == null || currentUser.uid == widget.postUid) return;
 
+    // Kunin ang username ng nag-action para sa notification message
     DocumentSnapshot userDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(currentUser.uid)
@@ -73,6 +77,7 @@ class _PostCardState extends State<PostCard> {
       fromUsername = (userDoc.data() as Map<String, dynamic>)['username'] ?? "Someone";
     }
 
+    // I-save ang notification details sa Firestore
     await FirebaseFirestore.instance.collection('notifications').add({
       'type': type,
       'fromUid': currentUser.uid,
@@ -84,6 +89,7 @@ class _PostCardState extends State<PostCard> {
     });
   }
 
+  // Kino-convert ang Firestore Timestamp sa madaling basahin na format (e.g., 5m ago)
   String formatTime(dynamic timestamp) {
     if (timestamp == null) return "Just now";
     DateTime date = (timestamp as Timestamp).toDate();
@@ -94,6 +100,7 @@ class _PostCardState extends State<PostCard> {
     return DateFormat('MMM d').format(date);
   }
 
+  // Pag-save ng bagong comment sa database
   Future<void> _submitComment() async {
     if (_commentController.text.trim().isEmpty) return;
     String commentText = _commentController.text.trim();
@@ -108,6 +115,7 @@ class _PostCardState extends State<PostCard> {
       myUsername = userData['username'] ?? user.email?.split('@')[0] ?? "User";
     }
 
+    // Idagdag ang comment sa sub-collection ng specific post
     await FirebaseFirestore.instance.collection('posts').doc(widget.postId).collection('comments').add({
       'uid': user.uid,
       'username': myUsername,
@@ -115,14 +123,15 @@ class _PostCardState extends State<PostCard> {
       'timestamp': FieldValue.serverTimestamp(),
     });
 
-    await _sendNotification("comment");
-    _commentController.clear();
+    await _sendNotification("comment"); // Notif para sa may-ari ng post
+    _commentController.clear(); // Burahin ang text sa field pagkatapos mag-send
   }
 
+  // Modal Bottom Sheet para sa Comments section
   void _showComments(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      isScrollControlled: true, // Para pwedeng itaas ang modal kapag lumabas ang keyboard
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.75,
@@ -133,6 +142,7 @@ class _PostCardState extends State<PostCard> {
         child: Column(
           children: [
             const SizedBox(height: 10),
+            // Handle bar sa taas ng modal
             Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(10))),
             const Padding(
               padding: EdgeInsets.all(15),
@@ -140,6 +150,7 @@ class _PostCardState extends State<PostCard> {
             ),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
+                // Real-time listener para sa mga comments
                 stream: FirebaseFirestore.instance.collection('posts').doc(widget.postId).collection('comments').orderBy('timestamp', descending: true).snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
@@ -153,6 +164,7 @@ class _PostCardState extends State<PostCard> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // FutureBuilder para makuha ang Profile Pic ng nag-comment
                             FutureBuilder<DocumentSnapshot>(
                               future: FirebaseFirestore.instance.collection('users').doc(data['uid']).get(),
                               builder: (context, userSnap) {
@@ -182,6 +194,7 @@ class _PostCardState extends State<PostCard> {
                                   const SizedBox(height: 4),
                                   Text(data['comment'] ?? "", style: const TextStyle(color: Colors.white70, fontSize: 14)),
                                   const SizedBox(height: 10),
+                                  // Actions sa bawat comment: Copy at Delete
                                   Row(
                                     children: [
                                       GestureDetector(
@@ -219,6 +232,7 @@ class _PostCardState extends State<PostCard> {
                 },
               ),
             ),
+            // Textfield input para sa bagong comment
             Padding(
               padding: EdgeInsets.only(
                   bottom: MediaQuery.of(context).viewInsets.bottom + 10,
@@ -265,10 +279,10 @@ class _PostCardState extends State<PostCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // HEADER: Profile picture, Username, at Post Settings (More icon)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Username Clickable Header
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -305,6 +319,7 @@ class _PostCardState extends State<PostCard> {
                   ],
                 ),
               ),
+              // Popup Menu para sa Save at About Artist
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_horiz, color: Colors.white),
                 color: const Color(0xFF1A1D23),
@@ -312,7 +327,7 @@ class _PostCardState extends State<PostCard> {
                   if (value == 'save') {
                     final currentUser = FirebaseAuth.instance.currentUser;
                     if (currentUser == null) return;
-
+                    // I-save ang post details sa 'saved' collection ng user
                     await FirebaseFirestore.instance
                         .collection('users')
                         .doc(currentUser.uid)
@@ -334,7 +349,6 @@ class _PostCardState extends State<PostCard> {
                       );
                     }
                   } else if (value == 'about') {
-                    // Navigation to Artist Profile from Menu
                     Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => ProfilePage(uid: widget.postUid))
@@ -367,6 +381,7 @@ class _PostCardState extends State<PostCard> {
             ],
           ),
           const SizedBox(height: 15),
+          // BODY: Mismong imahe ng post
           ClipRRect(
             borderRadius: BorderRadius.circular(15),
             child: widget.imageUrl.startsWith('http')
@@ -374,6 +389,7 @@ class _PostCardState extends State<PostCard> {
                 : Image.asset(widget.imageUrl, width: double.infinity, height: 350, fit: BoxFit.cover),
           ),
           const SizedBox(height: 12),
+          // FOOTER: Like button at Comment button
           Row(
             children: [
               GestureDetector(
@@ -388,11 +404,13 @@ class _PostCardState extends State<PostCard> {
                       .doc(currentUser.uid);
 
                   if (isLiked) {
+                    // Kung i-unlike: Tanggalin ang document at bawasan ang like count
                     await likeDoc.delete();
                     await FirebaseFirestore.instance.collection('posts').doc(widget.postId).update({
                       'likes': FieldValue.increment(-1),
                     });
                   } else {
+                    // Kung i-like: Mag-add ng document at dagdagan ang like count
                     await likeDoc.set({'uid': currentUser.uid});
                     await FirebaseFirestore.instance.collection('posts').doc(widget.postId).update({
                       'likes': FieldValue.increment(1),
@@ -422,6 +440,7 @@ class _PostCardState extends State<PostCard> {
                   children: [
                     const Icon(Icons.chat_bubble_outline, size: 24, color: Colors.white),
                     const SizedBox(width: 8),
+                    // Real-time update para sa comment count
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('posts')
@@ -439,6 +458,7 @@ class _PostCardState extends State<PostCard> {
             ],
           ),
           const SizedBox(height: 12),
+          // CAPTION: Pinagsamang Bold Username at normal na text para sa caption
           RichText(
             text: TextSpan(
               children: [

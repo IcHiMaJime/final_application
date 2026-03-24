@@ -1,4 +1,4 @@
-import 'dart:ui'; // Import para sa ImageFilter (Blur)
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,6 +8,7 @@ import '../widgets/post_card.dart';
 class ProfilePage extends StatefulWidget {
   final String? uid;
   const ProfilePage({super.key, this.uid});
+
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
