@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:social_media_app/screens/home_screen.dart';
+import 'package:social_media_app/screens/main_navigator.dart';
 import '../services/auth_service.dart';
 
 class AddPostPage extends StatefulWidget {
@@ -72,7 +74,10 @@ class _AddPostPageState extends State<AddPostPage> {
       if (mounted) {
         setState(() => _isLoading = false);
         // I-pop muna ang screen bago ang SnackBar para iwas white screen
-        Navigator.of(context).pop();
+        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const MainNavigator()),
+            (route) => false,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Art posted successfully! ✨"), backgroundColor: Colors.green)
         );

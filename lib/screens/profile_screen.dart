@@ -197,10 +197,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       builder: (context, userSnapshot) {
         String username = "User", bio = "", profilePic = "";
         if (userSnapshot.hasData && userSnapshot.data!.exists) {
-          var userData = userSnapshot.data!.data() as Map<String, dynamic>;
+          final userData = userSnapshot.data!.data() as Map<String, dynamic>;
           username = userData['username'] ?? "User";
           bio = userData['bio'] ?? "";
-          profilePic = userData['profilePic'] ?? "";
+          profilePic = userData?['profilePic'] ?? "";
         }
 
         return Scaffold(
@@ -221,8 +221,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   children: [
                     CircleAvatar(
                         radius: 40,
-                        backgroundImage: profilePic.isNotEmpty ? NetworkImage(profilePic) : null,
-                        child: profilePic.isEmpty ? const Icon(Icons.person) : null
+                        backgroundImage: (profilePic.isNotEmpty) ? NetworkImage(profilePic) : null,
+                        child: (profilePic.isEmpty) ? const Icon(Icons.person) : null
                     ),
                     Expanded(
                       child: Row(
